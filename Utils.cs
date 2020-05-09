@@ -12,14 +12,13 @@ namespace UnoServer
         /* Install newtonsoft.json package to Visual Studio using NuGet Package Manager then add the following code:
          * ClassName ObjectName = JsonConvert.DeserializeObject < ClassName > (jsonObject);
          */
-
         public static String Serialize(Game gameToSerialize) {
             return JsonConvert.SerializeObject(gameToSerialize);
         }
 
         public static Game Deserialize(String message) {
-            Console.WriteLine(message);
-            Console.WriteLine();
+            //Console.WriteLine(message);
+            //Console.WriteLine();
             return JsonConvert.DeserializeObject<Game>(message);
         }
 

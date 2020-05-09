@@ -18,10 +18,16 @@ namespace UnoServer
         public bool isGameReady { set; get; }
 
         [JsonProperty()]
+        public bool isGameOver { set; get; }
+
+        [JsonProperty()]
+        public bool playersDisconnected { set; get; }
+
+        [JsonProperty()]
         public UInt16 numberOfPlayers { set; get; }
 
         [JsonProperty()]
-        public UInt16 direction { set; get; } // 1 is incrementing (0 -> 1 -> 2...); -1 is decrementing (0 -> n -> n-1...)
+        public bool direction { set; get; } // true is incrementing (0 -> 1 -> 2...); false is decrementing (0 -> n -> n-1...)
 
         [JsonProperty()]
         public UInt16 activePlayerIdx { set; get; }
@@ -38,9 +44,11 @@ namespace UnoServer
         public Game(UInt16 numberOfPlayers, int gameId) {
             this.gameId = gameId;
             isGameReady = false;
+            isGameOver = false;
+            playersDisconnected = false;
 
             this.numberOfPlayers = numberOfPlayers;
-            direction = 1;
+            direction = true;
             activePlayerIdx = (UInt16)random.Next(0, numberOfPlayers);
 
             // Create initial Stack
@@ -70,32 +78,40 @@ namespace UnoServer
         private List<Cards> initializeCards() {
 
             List<Cards> stackOfCards = new List<Cards>();
+            UInt16 cardId = 0;
 
             for (UInt16 color = 0; color < 4; color++) {
                 // 19 cartas con numero por color, solo hay una de 0 por color
                 for (UInt16 number = 0; number <= 9; number++) {
-                    stackOfCards.Add(new Cards(number, color, false, false, false, false, false));
+                    stackOfCards.Add(new Cards(cardId, number, color, false, false, false, false, false));
+                    cardId++;
                 }
                 for (UInt16 number = 1; number <= 9; number++) {
-                    stackOfCards.Add(new Cards(number, color, false, false, false, false, false));
+                    stackOfCards.Add(new Cards(cardId, number, color, false, false, false, false, false));
+                    cardId++;
                 }
 
                 // Cartas de acción
                 for (int idx = 0; idx < 2; idx++) {
                     // +2
-                    stackOfCards.Add(new Cards(Cards.NO_NUMBER, color, true, false, false, false, false));
+                    stackOfCards.Add(new Cards(cardId, Cards.NO_NUMBER, color, true, false, false, false, false));
+                    cardId++;
                     // reverse
-                    stackOfCards.Add(new Cards(Cards.NO_NUMBER, color, false, true, false, false, false));
+                    stackOfCards.Add(new Cards(cardId, Cards.NO_NUMBER, color, false, true, false, false, false));
+                    cardId++;
                     // skip
-                    stackOfCards.Add(new Cards(Cards.NO_NUMBER, color, false, false, true, false, false));
+                    stackOfCards.Add(new Cards(cardId, Cards.NO_NUMBER, color, false, false, true, false, false));
+                    cardId++;
                 }
             }
 
             for (int idx = 0; idx < 4; idx++) {
                 // +4
-                stackOfCards.Add(new Cards(Cards.NO_NUMBER, Cards.NO_COLOR, false, false, true, true, false));
+                stackOfCards.Add(new Cards(cardId, Cards.NO_NUMBER, Cards.NO_COLOR, false, false, true, true, false));
+                cardId++;
                 // change color
-                stackOfCards.Add(new Cards(Cards.NO_NUMBER, Cards.NO_COLOR, false, false, true, false, true));
+                stackOfCards.Add(new Cards(cardId, Cards.NO_NUMBER, Cards.NO_COLOR, false, false, true, false, true));
+                cardId++;
             }
 
             return stackOfCards;
@@ -114,6 +130,22 @@ namespace UnoServer
                 dictionary.Add(player, cards);
             }
             return dictionary;
+        }
+
+        // Get the first card, add to the player cards, remove from stack, return it
+        public List<Cards> DrawCardPlayer(UInt16 playerIdx, int numberOfCards) {
+            List<Cards> drawnCards = new List<Cards>();
+            for (int i = 0; i < numberOfCards; i++) {
+                Cards card = cardsStack[0];
+
+                playersCards[playerIdx].Add(card);
+                cardsStack.RemoveAt(0);
+                drawnCards.Add(card);
+            }
+            return drawnCards;
+        }
+        public void RemoveCardFromPlayer(Cards card, UInt16 playerIdx) {
+            playersCards[playerIdx].Remove(card);
         }
     }
 }
